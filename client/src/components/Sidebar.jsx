@@ -1,166 +1,151 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard,
-    User,
-    Settings,
-    Bell,
-    LogOut,
-    ChevronLeft,
-    Menu,
-    GraduationCap,
-    BookOpen,
-    Award,
-    Briefcase,
-    DollarSign
+  LayoutDashboard,
+  Calendar,
+  Users,
+  QrCode,
+  Wallet,
+  Settings,
+  Headphones,
+  LogOut,
+  Moon,
+  Sun,
+  ChevronRight,
+  Zap,
+  Globe,
+  Sparkles,
+  ShieldCheck,
+  Activity
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
-const Sidebar = ({ isOpen, toggleSidebar }) => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+const NAV_ITEMS = [
+  { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { name: 'Events Manager', icon: Calendar, path: '/events', badge: 'Active' },
+  { name: 'Guest Roster & Invites', icon: Users, path: '/guests' },
+  { name: 'Gate Scanner Terminal', icon: QrCode, path: '/scanner' },
+  { name: 'Gate Telemetry', icon: Activity, path: '/gates', badge: 'Live' },
+  { name: 'Wallet & Payouts', icon: Wallet, path: '/wallet' },
+  { name: 'Settings', icon: Settings, path: '/settings' },
+];
 
-    const navItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
-        { name: 'Career Profile', icon: <User size={20} />, path: '/profile' },
-        { name: 'Learning Hub', icon: <BookOpen size={20} />, path: '/learning' },
-        { name: 'Certifications', icon: <Award size={20} />, path: '/certifications' },
-        { name: 'Job Openings', icon: <Briefcase size={20} />, path: '/jobs' },
-        { name: 'Scholarships', icon: <DollarSign size={20} />, path: '/scholarships' },
-        { name: 'Notifications', icon: <Bell size={20} />, path: '/notifications', badge: 3 },
-        { name: 'Settings', icon: <Settings size={20} />, path: '/settings' },
-    ];
+const Sidebar = () => {
+  const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+  return (
+    <aside className="w-[240px] shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-30 bg-white dark:bg-[#0c0e14] border-r border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200 select-none">
+      
+      {/* ─── Brand Identity Header ─── */}
+      <div className="px-5 py-5 border-b border-slate-100 dark:border-slate-800/80">
+        <NavLink to="/" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/25 group-hover:scale-105 transition-all">
+            <QrCode size={19} strokeWidth={2.3} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-[16px] tracking-tight text-slate-900 dark:text-white">
+                QR<span className="text-indigo-600 dark:text-indigo-400">Invite</span>
+              </span>
+              <span className="text-[8px] font-bold px-1.5 py-0.2 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20">
+                PRO
+              </span>
+            </div>
+            <span className="text-[9px] block font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-0.5">
+              Organizer Suite
+            </span>
+          </div>
+        </NavLink>
+      </div>
 
-    return (
-        <>
-            {/* Mobile Overlay */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={toggleSidebar}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
-                    />
-                )}
-            </AnimatePresence>
+      {/* ─── Navigation Links ─── */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Management
+        </div>
 
-            {/* Sidebar Container */}
-            <motion.aside
-                initial={false}
-                animate={{
-                    width: isOpen ? '280px' : '88px',
-                }}
-                className={`fixed left-0 top-0 h-screen glass border-r border-white/10 z-50 transition-all duration-300 flex flex-col ${!isOpen && 'items-center'}`}
+        {NAV_ITEMS.map(({ name, icon: Icon, path, badge }) => {
+          const isActive =
+            location.pathname === path ||
+            (path !== '/' && location.pathname.startsWith(path)) ||
+            (path === '/gates' && location.pathname.startsWith('/live'));
+          return (
+            <NavLink
+              key={path}
+              to={path}
+              className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all group ${
+                isActive
+                  ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900/60'
+              }`}
             >
-                {/* Logo Section */}
-                <div className="h-20 flex items-center px-6 mb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary shrink-0">
-                            <GraduationCap size={24} />
-                        </div>
-                        {isOpen && (
-                            <motion.span
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="font-bold text-xl tracking-tight text-white bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent"
-                            >
-                                CareerMAX
-                            </motion.span>
-                        )}
-                    </div>
-                </div>
+              <div className="flex items-center gap-2.5">
+                <Icon
+                  size={16}
+                  strokeWidth={isActive ? 2.3 : 1.8}
+                  className={isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'}
+                />
+                <span>{name}</span>
+              </div>
+              {badge && !isActive && (
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {badge}
+                </span>
+              )}
+              {isActive && (
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              )}
+            </NavLink>
+          );
+        })}
 
-                {/* Navigation Items */}
-                <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.name}
-                            to={item.path}
-                            className={({ isActive }) => `
-                flex items-center gap-4 px-4 py-3 rounded-xl transition-all group relative
-                ${isActive
-                                    ? 'bg-primary text-white shadow-lg shadow-primary/20 font-semibold'
-                                    : 'text-slate-400 hover:bg-white/5 hover:text-white'}
-                ${!isOpen && 'justify-center px-0'}
-              `}
-                        >
-                            <div className="shrink-0">{item.icon}</div>
-                            {isOpen && (
-                                <motion.span
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="font-medium text-sm"
-                                >
-                                    {item.name}
-                                </motion.span>
-                            )}
-                            {item.badge && !isOpen && (
-                                <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
-                            )}
-                            {item.badge && isOpen && (
-                                <span className="ml-auto bg-red-500/20 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    {item.badge}
-                                </span>
-                            )}
-                            {!isOpen && (
-                                <div className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[60]">
-                                    {item.name}
-                                </div>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
+        <div className="pt-4 px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Public Portal
+        </div>
+        <NavLink
+          to="/"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-all"
+        >
+          <Globe size={15} className="text-slate-400" />
+          <span>Public Website</span>
+        </NavLink>
+      </nav>
 
-                {/* User Profile Section */}
-                <div className="p-4 border-t border-white/5">
-                    <div className={`flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] ${!isOpen && 'justify-center border-none bg-transparent'}`}>
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center font-bold shrink-0 shadow-lg shadow-primary/20 text-white">
-                            {user?.name?.charAt(0).toUpperCase()}
-                        </div>
-                        {isOpen && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="overflow-hidden"
-                            >
-                                <p className="text-sm font-semibold truncate text-white">{user?.name}</p>
-                                <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                            </motion.div>
-                        )}
-                    </div>
+      {/* ─── Bottom User Profile / Security Badge ─── */}
+      <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
+        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            KO
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Chief Kelechi Okafor</div>
+            <div className="text-[10px] text-slate-400 truncate">Verified Host • Level 3</div>
+          </div>
+        </div>
 
-                    <button
-                        onClick={handleLogout}
-                        className={`w-full mt-4 flex items-center gap-4 px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all group relative ${!isOpen && 'justify-center px-0'}`}
-                    >
-                        <LogOut size={20} />
-                        {isOpen && <span className="font-medium text-sm">Logout</span>}
-                        {!isOpen && (
-                            <div className="absolute left-full ml-4 px-2 py-1 bg-red-500 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[60]">
-                                Logout
-                            </div>
-                        )}
-                    </button>
-                </div>
+        <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 dark:text-slate-400">
+          <button
+            onClick={toggleTheme}
+            className="flex items-center gap-1.5 text-xs font-medium hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} />}
+            <span>{isDark ? 'Light' : 'Dark'}</span>
+          </button>
 
-                {/* Toggle Button */}
-                <button
-                    onClick={toggleSidebar}
-                    className="absolute -right-3 top-24 w-6 h-6 bg-slate-800 border border-white/10 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-xl lg:flex hidden"
-                >
-                    {isOpen ? <ChevronLeft size={14} /> : <Menu size={14} />}
-                </button>
-            </motion.aside>
-        </>
-    );
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+          >
+            <LogOut size={13} />
+            <span>Exit</span>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+  );
 };
 
 export default Sidebar;

@@ -19,8 +19,8 @@ const userSchema = mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['jobseeker', 'employer', 'sponsor', 'admin'],
-      default: 'jobseeker',
+      enum: ['organizer', 'scanner', 'scanner_operator', 'admin', 'staff', 'jobseeker', 'employer', 'sponsor'],
+      default: 'organizer',
     },
     subscriptionTier: {
       type: String,

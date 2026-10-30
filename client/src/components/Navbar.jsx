@@ -1,154 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Bell, Plus, QrCode, Menu, X, Search, Moon, Sun,
+  Command, Sparkles, CheckCircle2, ChevronDown
+} from 'lucide-react';
+import Notification, { INITIAL_NOTIFICATIONS } from './Notification';
+import { useTheme } from '../context/ThemeContext';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Heart, Menu, X } from 'lucide-react';
 
-const Navbar = ({ onOpenDonate, onOpenSearch }) => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+const PAGE_TITLES = {
+  '/dashboard': 'Dashboard Overview',
+  '/events': 'Events Manager',
+  '/guests': 'Guest Roster & Pass Dispatch',
+  '/scanner': 'Gate Access Terminal',
+  '/wallet': 'Revenue & Settlements',
+  '/settings': 'Account & Gateway Settings',
+};
+
+const Navbar = ({ onOpenNewEvent, onOpenScanner }) => {
+  const { isDark, toggleTheme } = useTheme();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const notifRef = useRef(null);
   const location = useLocation();
 
+  const unread = notifications.filter((n) => !n.read).length;
+  const title = PAGE_TITLES[location.pathname] || 'Organizer Workspace';
+
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+    const handler = (e) => {
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setNotifOpen(false);
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'About Us', path: '/about' },
-    { name: 'Our Work', path: '/our-work' },
-    { name: 'Impact', path: '/impact' },
-    { name: 'News & Stories', path: '/news' },
-    { name: 'Get Involved', path: '/get-involved' },
-    { name: 'Resources', path: '/resources' },
-    { name: 'Contact', path: '/contact' },
-  ];
-
-  const isActive = (path) => {
-    if (path === '/' && location.pathname === '/') return true;
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
-    return false;
-  };
-
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-md py-2.5' 
-          : 'py-3.5'
-      }`}
-      style={
-        !isScrolled
-          ? {
-              background:
-                'linear-gradient(to right, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.96) 55%, rgba(255,255,255,0.88) 75%, rgba(255,255,255,0.6) 88%, rgba(255,255,255,0.2) 100%)',
-            }
-          : {}
-      }
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          
-          {/* CMAOF Institutional Logo (Left) */}
-          <Link to="/" className="flex items-center group shrink-0" aria-label="Chief Michael Ade.Ojo Foundation Home">
-            <img
-              src="/images/CMAO Foundation hhhh.png"
-              alt="Chief Michael Ade.Ojo Foundation"
-              className="h-10 sm:h-12 w-auto max-w-[210px] sm:max-w-[280px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
+    <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3 bg-white/85 dark:bg-[#0c0e14]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
+      <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
+
+        {/* Left: Breadcrumb / Title & Gate Status */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hidden sm:block">
+              Host Workspace
+            </div>
+            <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <span>{title}</span>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Gate Mesh
+              </span>
+            </h1>
+          </div>
+        </div>
+
+        {/* Right: Actions & Tools */}
+        <div className="flex items-center gap-2.5">
+
+          {/* Quick Search Bar */}
+          <div className="hidden lg:flex items-center gap-2 h-9 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 text-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+            <Search size={14} className="text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search guests, events, or token..."
+              className="bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-400 w-48 text-xs font-medium"
             />
-          </Link>
+            <kbd className="flex items-center gap-0.5 text-[10px] text-slate-400 font-mono bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300/60 dark:border-slate-700">
+              <Command size={10} />K
+            </kbd>
+          </div>
 
-          {/* Desktop Navigation Links (Center) */}
-          <nav className="hidden xl:flex items-center space-x-6 lg:space-x-7">
-            {navLinks.map((link) => {
-              const active = isActive(link.path);
-              return (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`py-1 text-sm font-semibold transition-all relative ${
-                    active
-                      ? 'text-[#0F4C3A] font-bold'
-                      : 'text-slate-800 hover:text-[#0F4C3A]'
-                  }`}
-                >
-                  {link.name}
-                  {active && (
-                    <span className="absolute -bottom-2 left-0 right-0 h-[3px] bg-[#0F4C3A] rounded-full animate-fade-in" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Gate Scanner Launch */}
+          <button
+            onClick={onOpenScanner}
+            className="h-9 px-3.5 flex items-center gap-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+            title="Open Gate Scanner Terminal"
+          >
+            <QrCode size={14} strokeWidth={2.3} className="text-indigo-500" />
+            <span className="hidden sm:inline">Gate Scanner</span>
+          </button>
 
-          {/* Right Controls: Search Icon & Gradient Donate Button */}
-          <div className="flex items-center gap-3">
-            
-            {/* Search Trigger */}
+          {/* Create New Event Action */}
+          <button
+            onClick={onOpenNewEvent}
+            className="h-9 px-4 flex items-center gap-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-600/25 transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            <span>Create Event</span>
+          </button>
+
+          {/* Notifications Dropdown */}
+          <div className="relative" ref={notifRef}>
             <button
-              onClick={onOpenSearch}
-              className="w-10 h-10 rounded-full bg-white/90 border border-slate-200/80 shadow-sm hover:shadow flex items-center justify-center text-slate-700 hover:text-[#0F4C3A] hover:border-emerald-300 transition-all cursor-pointer backdrop-blur-sm"
-              title="Search foundation website"
-              aria-label="Search"
+              onClick={() => setNotifOpen(!notifOpen)}
+              className="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer relative shadow-2xs"
+              title="Notifications"
             >
-              <Search size={18} strokeWidth={2.3} />
+              <Bell size={16} />
+              {unread > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+              )}
             </button>
 
-            {/* Gradient Orange Donate Pill Button */}
-            <button
-              onClick={onOpenDonate}
-              className="bg-gradient-to-r from-[#F59E0B] via-[#E67E22] to-[#EA580C] hover:opacity-95 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-md hover:shadow-lg flex items-center gap-2 transition-all hover:scale-[1.03] active:scale-95 cursor-pointer"
-            >
-              <Heart size={16} className="fill-white/20 stroke-[2.5]" />
-              <span>Donate</span>
-            </button>
-
-            {/* Mobile Menu Toggle Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 text-slate-800 hover:text-[#0F4C3A] rounded-lg focus:outline-none"
-              aria-label="Toggle Navigation Menu"
-            >
-              {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
-            </button>
+            {notifOpen && (
+              <div className="absolute right-0 top-11 z-50 w-80">
+                <Notification
+                  notifications={notifications}
+                  onClose={() => setNotifOpen(false)}
+                />
+              </div>
+            )}
           </div>
 
         </div>
+
       </div>
-
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="xl:hidden bg-white border-b border-slate-200 px-4 pt-3 pb-6 space-y-2 animate-fade-in">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`block px-4 py-3 rounded-xl text-base font-semibold transition-colors ${
-                isActive(link.path)
-                  ? 'bg-emerald-50 text-[#0F4C3A] font-bold'
-                  : 'text-slate-800 hover:bg-slate-50'
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenDonate();
-              }}
-              className="w-full bg-gradient-to-r from-[#F59E0B] to-[#EA580C] text-white py-3 rounded-xl font-bold text-center flex items-center justify-center gap-2 shadow"
-            >
-              <Heart size={18} className="fill-white/20 stroke-[2.5]" />
-              <span>Donate to CMAOF</span>
-            </button>
-          </div>
-        </div>
-      )}
     </header>
   );
 };

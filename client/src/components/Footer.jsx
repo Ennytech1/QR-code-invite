@@ -1,26 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  Heart, 
-  ArrowRight, 
-  HeartPulse, 
-  Users, 
-  Handshake, 
-  Gift 
-} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { QrCode, ShieldCheck, Zap, Mail, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import ResourcesFooter from './resources/ResourcesFooter';
 
-// Inline SVG components for Social Media Icons
-const LinkedinIcon = () => (
+const GithubIcon = () => (
   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.74a1.6 1.6 0 1 0 1.6 1.6 1.6 1.6 0 0 0-1.6-1.6z"/>
-  </svg>
-);
-
-const FacebookIcon = () => (
-  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+    <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
   </svg>
 );
 
@@ -30,213 +15,139 @@ const TwitterIcon = () => (
   </svg>
 );
 
-const InstagramIcon = () => (
-  <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
-
-const YoutubeIcon = () => (
+const LinkedinIcon = () => (
   <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-    <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33zM9.75 15.02V8.48l5.75 3.27-5.75 3.27z"/>
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.74a1.6 1.6 0 1 0 1.6 1.6 1.6 1.6 0 0 0-1.6-1.6z"/>
   </svg>
 );
 
-const CmaofTreeLogo = () => (
-  <Link to="/" className="inline-block group select-none" aria-label="Chief Michael Ade.Ojo Foundation Home">
-    <img
-      src="/images/CMAO Foundation Logo.png"
-      alt="Chief Michael Ade.Ojo Foundation"
-      className="h-14 sm:h-16 w-auto max-w-[280px] sm:max-w-[320px] object-contain transition-transform duration-200 group-hover:scale-[1.02]"
-    />
-    <p className="text-[11px] font-medium text-slate-400 italic mt-2.5">
-      Stronger People. Brighter Communities.
-    </p>
-  </Link>
-);
+const Footer = () => {
+  const [email, setEmail] = useState('');
 
-const Footer = ({ onOpenDonate }) => {
-  const location = useLocation();
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-
-  // When visiting Resources section page, render the dedicated Resources Footer
-  if (location.pathname.startsWith('/resources')) {
-    return <ResourcesFooter onOpenDonate={onOpenDonate} />;
-  }
-
-  const handleNewsletterSubmit = (e) => {
+  const handleSubscribe = (e) => {
     e.preventDefault();
-    if (newsletterEmail) {
-      toast.success('Thank you for subscribing to CMAOF Institutional Gazette!');
-      setNewsletterEmail('');
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
     }
+    toast.success('Subscribed for platform updates!');
+    setEmail('');
   };
 
   return (
-    <footer className="w-full font-sans">
-      
-      {/* ────────────────────────────────────────────────────────── */}
-      {/* MAIN INSTITUTIONAL FOOTER (Deep Navy Background)           */}
-      {/* ────────────────────────────────────────────────────────── */}
-      <div className="bg-[#0B1829] text-slate-300 pt-10 sm:pt-12 pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800">
+      {/* Main Footer Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 pb-10 border-b border-slate-800/90">
-            
-            {/* Column 1: Logo & Brand & Social Icons (Col 1-4) */}
-            <div className="lg:col-span-4 space-y-4">
-              <CmaofTreeLogo />
-
-              {/* Social Media Circular Buttons */}
-              <div className="flex items-center gap-2.5 pt-2">
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn"
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-[#EA580C] text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <LinkedinIcon />
-                </a>
-
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-[#EA580C] text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <FacebookIcon />
-                </a>
-
-                <a
-                  href="https://x.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Twitter X"
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-[#EA580C] text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <TwitterIcon />
-                </a>
-
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-[#EA580C] text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <InstagramIcon />
-                </a>
-
-                <a
-                  href="https://youtube.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube"
-                  className="w-8 h-8 rounded-full bg-slate-800 hover:bg-[#EA580C] text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <YoutubeIcon />
-                </a>
+          {/* Brand Info */}
+          <div className="lg:col-span-2 space-y-4">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                <QrCode size={22} />
               </div>
+              <div>
+                <span className="font-extrabold text-xl text-white tracking-tight">QRInvite</span>
+                <span className="text-[10px] block font-medium text-cyan-400 tracking-wider uppercase -mt-1">
+                  Access Platform
+                </span>
+              </div>
+            </Link>
+            
+            <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
+              Tamper-resistant digital invitations and sub-second gate access control.
+              Powered by Ed25519 cryptographic tokens and anti-replay concurrency locks.
+            </p>
+
+            <div className="flex items-center gap-3 pt-2 text-slate-400">
+              <a href="#" className="p-2 rounded-lg bg-slate-800 hover:text-white hover:bg-slate-700 transition-colors">
+                <GithubIcon />
+              </a>
+              <a href="#" className="p-2 rounded-lg bg-slate-800 hover:text-white hover:bg-slate-700 transition-colors">
+                <TwitterIcon />
+              </a>
+              <a href="#" className="p-2 rounded-lg bg-slate-800 hover:text-white hover:bg-slate-700 transition-colors">
+                <LinkedinIcon />
+              </a>
             </div>
-
-            {/* Column 2: Quick Links (Col 5-6) */}
-            <div className="lg:col-span-2 space-y-2.5">
-              <h4 className="text-white font-bold text-xs tracking-wider uppercase font-sans">
-                Quick Links
-              </h4>
-              <ul className="space-y-2 text-xs font-medium">
-                <li><Link to="/" className="hover:text-emerald-400 transition-colors">Home</Link></li>
-                <li><Link to="/about" className="hover:text-emerald-400 transition-colors">About Us</Link></li>
-                <li><Link to="/our-work" className="hover:text-emerald-400 transition-colors">Our Work</Link></li>
-                <li><Link to="/impact" className="hover:text-emerald-400 transition-colors">Impact</Link></li>
-                <li><Link to="/news" className="hover:text-emerald-400 transition-colors">News & Stories</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 3: Get Involved (Col 7-8) */}
-            <div className="lg:col-span-2 space-y-2.5">
-              <h4 className="text-white font-bold text-xs tracking-wider uppercase font-sans">
-                Get Involved
-              </h4>
-              <ul className="space-y-2 text-xs font-medium">
-                <li><button onClick={onOpenDonate} className="hover:text-emerald-400 transition-colors text-left cursor-pointer">Donate</button></li>
-                <li><Link to="/get-involved" className="hover:text-emerald-400 transition-colors">Partner With Us</Link></li>
-                <li><Link to="/get-involved" className="hover:text-emerald-400 transition-colors">Volunteer</Link></li>
-                <li><Link to="/get-involved" className="hover:text-emerald-400 transition-colors">Support a Programme</Link></li>
-                <li><Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 4: Resources (Col 9-10) */}
-            <div className="lg:col-span-2 space-y-2.5">
-              <h4 className="text-white font-bold text-xs tracking-wider uppercase font-sans">
-                Resources
-              </h4>
-              <ul className="space-y-2 text-xs font-medium">
-                <li><Link to="/resources" className="hover:text-emerald-400 transition-colors">Reports</Link></li>
-                <li><Link to="/resources" className="hover:text-emerald-400 transition-colors">Publications</Link></li>
-                <li><Link to="/news" className="hover:text-emerald-400 transition-colors">Media</Link></li>
-                <li><Link to="/policies" className="hover:text-emerald-400 transition-colors">Policies</Link></li>
-                <li><Link to="/resources" className="hover:text-emerald-400 transition-colors">Downloads</Link></li>
-              </ul>
-            </div>
-
-            {/* Column 5: Stay Connected (Col 11-12) */}
-            <div className="lg:col-span-2 space-y-2.5">
-              <h4 className="text-white font-bold text-xs tracking-wider uppercase font-sans">
-                Stay Connected
-              </h4>
-              <p className="text-slate-400 text-[11px] leading-relaxed">
-                Subscribe to our newsletter for the latest updates, stories and opportunities.
-              </p>
-
-              <form onSubmit={handleNewsletterSubmit} className="space-y-2 pt-1">
-                <input
-                  type="email"
-                  value={newsletterEmail}
-                  onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="Your email address"
-                  className="bg-white text-slate-900 placeholder:text-slate-400 text-xs px-3.5 py-2.5 rounded-xl w-full border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#EA580C]"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[#EA580C] hover:bg-[#d97706] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-95 shadow cursor-pointer"
-                >
-                  <span>Subscribe</span>
-                  <ArrowRight size={14} strokeWidth={2.5} />
-                </button>
-              </form>
-            </div>
-
           </div>
 
-          {/* Bottom Legal Copyright Bar */}
-          <div className="pt-6 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-400 gap-3">
-            <p>© {new Date().getFullYear()} Chief Michael Ade.Ojo Foundation (CMAOF). All rights reserved.</p>
+          {/* Quick Links: Platform */}
+          <div>
+            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Platform</h4>
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <Link to="/" className="hover:text-cyan-400 transition-colors">Organizer Dashboard</Link>
+              </li>
+              <li>
+                <a href="#scanner" className="hover:text-cyan-400 transition-colors">Gate Scanner (PWA)</a>
+              </li>
+              <li>
+                <a href="#dispatch" className="hover:text-cyan-400 transition-colors">WhatsApp & Email Pass</a>
+              </li>
+              <li>
+                <a href="#security" className="hover:text-cyan-400 transition-colors">Ed25519 Cryptography</a>
+              </li>
+            </ul>
+          </div>
 
-            <div className="flex items-center space-x-3 text-slate-400">
-              <Link to="/policies" className="hover:text-slate-200">Privacy Policy</Link>
-              <span>|</span>
-              <Link to="/policies" className="hover:text-slate-200">Terms of Use</Link>
-              <span>|</span>
-              <Link to="/policies" className="hover:text-slate-200">Safeguarding</Link>
-              <span>|</span>
-              <Link to="/contact" className="hover:text-slate-200">Contact</Link>
-            </div>
+          {/* Quick Links: Resources */}
+          <div>
+            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Resources</h4>
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <a href="#docs" className="hover:text-cyan-400 transition-colors">API Documentation</a>
+              </li>
+              <li>
+                <a href="#specs" className="hover:text-cyan-400 transition-colors">Architecture Specs</a>
+              </li>
+              <li>
+                <a href="#offline" className="hover:text-cyan-400 transition-colors">Offline Sync Engine</a>
+              </li>
+              <li>
+                <a href="#audit" className="hover:text-cyan-400 transition-colors">Gate Audit Logs</a>
+              </li>
+            </ul>
+          </div>
 
-            <p className="text-slate-400 font-medium">
-              A Brighter Nigeria. For Generations.
+          {/* Newsletter / Updates */}
+          <div>
+            <h4 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">Stay Connected</h4>
+            <p className="text-xs text-slate-400 mb-3">
+              Receive platform notifications, release notes, and event security advisories.
             </p>
+            <form onSubmit={handleSubscribe} className="space-y-2">
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@organization.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-xs"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>Subscribe</span>
+                <ArrowRight size={14} />
+              </button>
+            </form>
           </div>
 
         </div>
-      </div>
 
+        {/* Bottom Bar */}
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <p>© {new Date().getFullYear()} QRInvite Platform. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            <a href="#" className="hover:text-slate-400">Security & Privacy</a>
+            <a href="#" className="hover:text-slate-400">Terms of Service</a>
+            <a href="#" className="hover:text-slate-400">NDPR & GDPR Compliance</a>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };
