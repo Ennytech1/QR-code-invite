@@ -13,11 +13,13 @@ client/.env
 client/.env.*
 !client/.env.example
 
-# Build Outputs
+# Build Outputs & Cache
 dist/
 build/
 client/dist/
 client/dist-ssr/
+.vite/
+client/.vite/
 
 # Internal Agent Coordination Logs
 .agents/
