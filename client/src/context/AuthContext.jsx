@@ -99,12 +99,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginAsDemo = (role = 'organizer') => {
+    let name = 'Chief Kelechi Okafor';
+    let email = 'kelechi@qrinvite.io';
+    let organization = 'Royal Heritage Gala & Box Office';
+
+    if (role === 'admin') {
+      name = 'Platform Super Admin';
+      email = 'admin@qrinvite.io';
+      organization = 'QRInvite Global Trust & Treasury';
+    } else if (role === 'usher') {
+      name = 'Gate Security Officer #1';
+      email = 'usher@qrinvite.io';
+      organization = 'Eko Gate Operations Unit';
+    }
+
     const demoUser = {
-      id: 'usr_chief_kelechi',
-      name: role === 'usher' ? 'Gate Security Officer #1' : 'Chief Kelechi Okafor',
-      email: role === 'usher' ? 'usher@qrinvite.io' : 'kelechi@qrinvite.io',
+      id: role === 'admin' ? 'usr_super_admin' : (role === 'usher' ? 'usr_gate_usher_1' : 'usr_chief_kelechi'),
+      name,
+      email,
       role: role || 'organizer',
-      organization: 'Royal Heritage Gala & Box Office',
+      organization,
       token: 'demo_token_' + Date.now(),
     };
     setUser(demoUser);

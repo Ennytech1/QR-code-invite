@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useEvents } from '../context/EventContext';
+import useGateWebSocket from '../hooks/useGateWebSocket';
 
 // Distinctive badge styling matching QRInvite design system
 const TIER_BADGES = {
@@ -183,6 +184,27 @@ const LiveGatesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [realtimeVelocity, setRealtimeVelocity] = useState(48); // scans/min
   const [simulatedLogs, setSimulatedLogs] = useState([]);
+
+  // ─── Native RFC 6455 WebSocket Live Telemetry Hook ───
+  const {
+    isConnected: wsConnected,
+    connectionStatus: wsStatus,
+    liveSocketLogs,
+    socketVelocity,
+    latencyMs: wsLatency,
+    sendTestScan,
+    reconnect: wsReconnect,
+  } = useGateWebSocket(selectedEventId, {
+    onScanEvent: (newLog) => {
+      if (newLog.outcome === 'SUCCESS') {
+        toast.success(`⚡ Live Ingress: ${newLog.guestName} at ${newLog.gate}!`, { id: 'ws-ingress' });
+      } else if (newLog.outcome === 'DUPLICATE') {
+        toast.error(`🚨 Duplicate Replay Alert: ${newLog.guestName} blocked at ${newLog.gate}!`, { id: 'ws-ingress' });
+      }
+    },
+  });
+
+  const displayVelocity = socketVelocity || realtimeVelocity;
 
   // Generate initial simulated telemetry audit feed blended with context checkInLogs
   useEffect(() => {
@@ -351,7 +373,7 @@ const LiveGatesPage = () => {
     return () => clearInterval(interval);
   }, [isLiveStreaming]);
 
-  // Combine real checkInLogs from context with simulated audit entries
+  // Combine live WebSocket logs, real checkInLogs from context, and simulated audit entries
   const allAuditLogs = useMemo(() => {
     const fromContext = (checkInLogs || []).map((log) => ({
       id: log.id,
@@ -366,8 +388,8 @@ const LiveGatesPage = () => {
       latencyMs: 32,
     }));
 
-    return [...fromContext, ...simulatedLogs];
-  }, [checkInLogs, simulatedLogs]);
+    return [...liveSocketLogs, ...fromContext, ...simulatedLogs];
+  }, [liveSocketLogs, checkInLogs, simulatedLogs]);
 
   // Filtered logs
   const filteredLogs = useMemo(() => {
@@ -539,7 +561,9 @@ const LiveGatesPage = () => {
           {/* Event Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredCatalogEvents.map((evt) => {
-              const evtGuests = (guests && guests[evt.id]) || [];
+              const evtGuests = Array.isArray(guests)
+                ? guests.filter((g) => g.eventId === evt.id)
+                : (guests && guests[evt.id]) || [];
               const checkedIn = evtGuests.filter((g) => g.status === 'CHECKED_IN').length;
               const pct = evtGuests.length > 0 ? Math.round((checkedIn / evtGuests.length) * 100) : 0;
 
@@ -663,8 +687,39 @@ const LiveGatesPage = () => {
               </div>
             </div>
 
-            {/* Header Controls: Stream Controls */}
+            {/* Header Controls: WebSocket Status & Stream Controls */}
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* WebSocket Live Status Badge */}
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  wsConnected
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 shadow-xs'
+                    : wsStatus === 'connecting' || wsStatus === 'reconnecting'
+                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/30'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-slate-200 dark:border-zinc-700'
+                }`}
+                title={wsConnected ? `Connected to WebSocket Gateway (Latency: ${wsLatency || 22}ms)` : 'Click to reconnect to WebSocket Gateway'}
+              >
+                <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'}`} />
+                <span>
+                  {wsConnected
+                    ? `WS Live (${wsLatency ? `${wsLatency}ms` : 'Sub-30ms'})`
+                    : wsStatus === 'reconnecting'
+                    ? 'WS Reconnecting...'
+                    : 'WS Offline (Sim Active)'}
+                </span>
+                {!wsConnected && (
+                  <button
+                    type="button"
+                    onClick={wsReconnect}
+                    className="p-0.5 hover:rotate-180 transition-transform cursor-pointer ml-0.5"
+                    title="Reconnect WebSocket"
+                  >
+                    <RefreshCw size={11} />
+                  </button>
+                )}
+              </div>
+
               <button
                 type="button"
                 onClick={handleBackToCatalog}
@@ -674,6 +729,7 @@ const LiveGatesPage = () => {
               </button>
 
               <button
+                type="button"
                 onClick={() => setIsLiveStreaming(!isLiveStreaming)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                   isLiveStreaming
@@ -686,14 +742,31 @@ const LiveGatesPage = () => {
               </button>
 
               <button
-                onClick={handleSimulateScan}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                type="button"
+                onClick={() => {
+                  if (wsConnected) {
+                    const sampleVIPs = [
+                      { name: 'Dr. Folashade Adeleke', tier: 'VVIP', gate: 'VIP Gate East', table: 'Table 1 • Presidential' },
+                      { name: 'Aliko Dangote GCON', tier: 'VVIP', gate: 'VIP Gate East', table: 'High Table #01' },
+                      { name: 'Engr. Babatunde Lawal', tier: 'VIP', gate: 'Gate North #1', table: 'Executive Lounge' },
+                      { name: 'CNBC Africa News Crew', tier: 'MEDIA', gate: 'Press & Media Gate', table: 'Press Corps' },
+                    ];
+                    const pick = sampleVIPs[Math.floor(Math.random() * sampleVIPs.length)];
+                    sendTestScan(pick);
+                    toast.success(`⚡ Pushed live scan via WebSocket: ${pick.name}!`);
+                  } else {
+                    handleSimulateScan();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Send a real-time scan event through the WebSocket Gateway"
               >
-                <Zap size={13} className="text-amber-400" />
-                <span>Simulate Scan</span>
+                <Zap size={13} className="text-indigo-500" />
+                <span>{wsConnected ? 'Test WS Ingress' : 'Simulate Scan'}</span>
               </button>
 
               <button
+                type="button"
                 onClick={handleExportCSV}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
               >
@@ -702,30 +775,6 @@ const LiveGatesPage = () => {
               </button>
             </div>
           </div>
-                : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
-            }`}
-          >
-            {isLiveStreaming ? <Pause size={13} /> : <Play size={13} />}
-            <span>{isLiveStreaming ? 'Stream Active' : 'Stream Paused'}</span>
-          </button>
-
-          <button
-            onClick={handleSimulateScan}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Zap size={13} className="text-amber-400" />
-            <span>Simulate Scan</span>
-          </button>
-
-          <button
-            onClick={handleExportCSV}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
-        </div>
-      </div>
 
       {/* ─── Telemetry KPI Cards ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -740,7 +789,7 @@ const LiveGatesPage = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black font-mono-numbers text-slate-900 dark:text-white">
-              {realtimeVelocity}
+              {displayVelocity}
             </span>
             <span className="text-xs font-semibold text-slate-400">scans / min</span>
           </div>
@@ -752,7 +801,7 @@ const LiveGatesPage = () => {
           <div className="mt-3 w-full h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(100, (realtimeVelocity / 75) * 100)}%` }}
+              style={{ width: `${Math.min(100, (displayVelocity / 75) * 100)}%` }}
             />
           </div>
         </div>
@@ -1168,6 +1217,11 @@ const LiveGatesPage = () => {
                       <td className="py-3 pr-4">
                         <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                           <span>{log.guestName}</span>
+                          {log.isWebSocketEvent && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-black bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 animate-pulse">
+                              ⚡ WS LIVE
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] font-mono text-slate-400">
                           {log.guestId}
@@ -1215,6 +1269,7 @@ const LiveGatesPage = () => {
         </div>
 
       </div>
+        </div>
       )}
 
     </div>

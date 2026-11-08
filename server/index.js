@@ -64,6 +64,7 @@ app.use('/api/guests', require('./routes/guestRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
 app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Secure API Gateway' });

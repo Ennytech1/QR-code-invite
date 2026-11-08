@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../context/EventContext';
 import { verifyScanApi } from '../services/api';
+import useGateWebSocket from '../hooks/useGateWebSocket';
 
 /* ── Web Audio API sound synthesizer ── */
 const playAudioFeedback = (type) => {
@@ -87,6 +88,9 @@ const ScannerPage = () => {
   const [scanHistory, setScanHistory] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
   const [hudFlash, setHudFlash] = useState(null);
+
+  // Live WebSocket Gateway connection
+  const { sendTestScan: broadcastWsScan, isConnected: wsMeshConnected } = useGateWebSocket(selectedEventId);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -284,6 +288,17 @@ const ScannerPage = () => {
 
     setScanHistory((prev) => [logItem, ...prev.slice(0, 19)]);
     setIsSimulating(false);
+
+    // Broadcast live scan outcome to Gate Telemetry command center via WebSocket
+    if (broadcastWsScan && result.guest) {
+      broadcastWsScan({
+        outcome: result.status,
+        name: result.guest.name,
+        tier: result.guest.tier,
+        table: result.guest.table,
+        gate: gateName,
+      });
+    }
 
     if (result.status === 'SUCCESS') {
       toast.success(`Access Granted: ${result.guest?.name} checked in!`);

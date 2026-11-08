@@ -29,6 +29,7 @@ import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
 import CreateEventPage from './pages/CreateEventPage';
 import AddGuestPage from './pages/AddGuestPage';
+import AdminPage from './pages/AdminPage';
 
 // Modals
 import NewEventModal from './components/modals/NewEventModal';
@@ -52,6 +53,8 @@ const AppLayout = () => {
     location.pathname.startsWith('/pass/') ||
     location.pathname.startsWith('/ticket/');
 
+  const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin');
+
   return (
     <>
       {isPublicRoute ? (
@@ -73,6 +76,13 @@ const AppLayout = () => {
           <Route path="/ticket/:id" element={<PublicPassPage />} />
           <Route path="/ticket/:token" element={<PublicPassPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      ) : isAdminRoute ? (
+        // Dedicated Super Admin Enterprise Console (Independent Shell & Fleet Telemetry)
+        <Routes>
+          <Route path="/admin/*" element={<AdminPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       ) : (
         // Organizer Portal Shell

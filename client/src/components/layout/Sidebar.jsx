@@ -16,6 +16,7 @@ import {
   Globe,
   Sparkles,
   ShieldCheck,
+  ShieldAlert,
   Activity
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
@@ -77,7 +78,7 @@ const Sidebar = () => {
           Management
         </div>
 
-        {NAV_ITEMS.map(({ name, icon: Icon, path, badge }) => {
+        {NAV_ITEMS.map(({ name, icon: Icon, path, badge, badgeColor }) => {
           const isActive =
             location.pathname === path ||
             (path !== '/' && location.pathname.startsWith(path)) ||
@@ -101,7 +102,7 @@ const Sidebar = () => {
                 <span>{name}</span>
               </div>
               {badge && !isActive && (
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${badgeColor || 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'}`}>
                   {badge}
                 </span>
               )}
@@ -135,6 +136,19 @@ const Sidebar = () => {
             <div className="text-[10px] text-slate-400 truncate">{displayRole}</div>
           </div>
         </div>
+
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="w-full flex items-center justify-between p-2 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 text-[11px] font-bold cursor-pointer hover:bg-amber-500/20 transition-all"
+          >
+            <span className="flex items-center gap-1.5">
+              <ShieldAlert size={13} />
+              <span>Super Admin Console</span>
+            </span>
+            <ChevronRight size={13} />
+          </button>
+        )}
 
         <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 dark:text-slate-400">
           <button
