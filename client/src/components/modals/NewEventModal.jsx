@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   X, Calendar, MapPin, Users, Key, Sparkles, Check,
-  Lock, Globe, DollarSign, Palette, Plus, Trash2
+  Lock, Globe, DollarSign, Palette, Plus, Trash2, ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useEvents } from '../../context/EventContext';
@@ -15,6 +17,7 @@ const CARD_THEME_OPTIONS = [
 ];
 
 const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
+  const navigate = useNavigate();
   const { createEvent } = useEvents();
 
   // Mode: 'PUBLIC' or 'PRIVATE'
@@ -96,20 +99,36 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#121622] border border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-slate-100 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-white dark:bg-[#0c0e14] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-slate-800 dark:text-slate-100 my-auto transition-colors">
         
+        {/* Full Page Studio Banner */}
+        <div className="flex items-center justify-between px-6 py-2.5 bg-indigo-50/80 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/30 text-xs text-indigo-700 dark:text-indigo-300 font-medium">
+          <span>Prefer a full screen page with live pass preview?</span>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigate('/events/create');
+            }}
+            className="font-bold underline flex items-center gap-1 hover:text-indigo-900 dark:hover:text-white cursor-pointer"
+          >
+            <span>Open Studio Page</span>
+            <ArrowRight size={12} />
+          </button>
+        </div>
+
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3B2875] to-[#7C5CFC] text-white flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
               <Sparkles size={18} />
             </div>
             <div>
-              <h3 className="font-extrabold text-base sm:text-lg tracking-tight text-white">
+              <h3 className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
                 Create New Event
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Choose between public ticket sales or private invitation dispatch
               </p>
             </div>
@@ -117,7 +136,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -128,17 +147,17 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
           
           {/* ──── DUAL MODE SELECTOR PILL ──── */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <label className="block text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Event Access Model
             </label>
-            <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
+            <div className="grid grid-cols-2 gap-3 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setEventType('PUBLIC')}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   eventType === 'PUBLIC'
-                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-600/20'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Globe size={15} />
@@ -150,8 +169,8 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
                 onClick={() => setEventType('PRIVATE')}
                 className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   eventType === 'PRIVATE'
-                    ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-amber-500 text-black shadow-md shadow-amber-500/25'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <Lock size={15} />
@@ -159,7 +178,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-400 px-1">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 px-1">
               {eventType === 'PUBLIC'
                 ? '🌍 Public events are listed on the discovery feed so attendees can buy tickets online.'
                 : '🔒 Private events are strictly invitation-only (e.g. Weddings, VIP Galas). You design and send custom JPEG cards via WhatsApp.'}
@@ -168,8 +187,8 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Event Title
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Event Title <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -177,13 +196,13 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
               placeholder={eventType === 'PUBLIC' ? 'e.g. Lagos Neon Sunset Party' : 'e.g. Folashade & Bayo Royal Wedding'}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm focus:outline-none focus:border-indigo-500 font-medium"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:border-indigo-500 font-medium transition-all"
             />
           </div>
 
           {/* Host / Organizer Name */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Host / Organizing Entity
             </label>
             <input
@@ -191,14 +210,14 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
               placeholder={eventType === 'PUBLIC' ? 'e.g. LiveNation Africa' : 'e.g. The Adeleke Family'}
               value={formData.hostName}
               onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm focus:outline-none focus:border-indigo-500 font-medium"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:border-indigo-500 font-medium transition-all"
             />
           </div>
 
           {/* Venue */}
           <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              Venue Location
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              Venue Location <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <MapPin size={16} className="absolute left-3.5 top-3 text-slate-400" />
@@ -208,7 +227,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
                 placeholder="e.g. Eko Convention Centre, Victoria Island"
                 value={formData.venue}
                 onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm focus:outline-none focus:border-indigo-500 font-medium transition-all"
               />
             </div>
           </div>
@@ -216,32 +235,32 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
           {/* Date, Time, Capacity */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                Date
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Date <span className="text-rose-500">*</span>
               </label>
               <input
                 type="date"
                 required
                 value={formData.date}
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 Start Time
               </label>
               <input
                 type="time"
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 {eventType === 'PRIVATE' ? 'Guest Limit' : 'Total Capacity'}
               </label>
               <input
@@ -250,27 +269,27 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
                 placeholder={eventType === 'PRIVATE' ? '100' : '500'}
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-medium font-mono"
               />
             </div>
           </div>
 
           {/* ──── CONDITIONAL OPTIONS: PRIVATE EVENT (CARD THEME & DRESS CODE) ──── */}
           {eventType === 'PRIVATE' && (
-            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-3.5">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-amber-400">
+            <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/30 space-y-3.5">
+              <div className="flex items-center gap-2 text-xs font-extrabold text-amber-700 dark:text-amber-400">
                 <Palette size={15} />
                 <span>Invitation Card Designer Settings</span>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Default Invitation Card Theme
                 </label>
                 <select
                   value={formData.cardTheme}
                   onChange={(e) => setFormData({ ...formData, cardTheme: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400"
                 >
                   {CARD_THEME_OPTIONS.map((t) => (
                     <option key={t.id} value={t.id}>
@@ -281,7 +300,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Dress Code
                 </label>
                 <input
@@ -289,19 +308,19 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
                   placeholder="e.g. Royal Traditional Regal / Black Tie"
                   value={formData.dressCode}
                   onChange={(e) => setFormData({ ...formData, dressCode: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Custom Invitation Message (Printed on Card)
                 </label>
                 <textarea
                   rows={2}
                   value={formData.customMessage}
                   onChange={(e) => setFormData({ ...formData, customMessage: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-amber-400"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-amber-400"
                   placeholder="e.g. We request the honor of your presence to celebrate with us."
                 />
               </div>
@@ -310,16 +329,16 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
 
           {/* ──── CONDITIONAL OPTIONS: PUBLIC EVENT (TICKET TIERS) ──── */}
           {eventType === 'PUBLIC' && (
-            <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 space-y-3">
+            <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-500/30 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-extrabold text-indigo-400">
+                <div className="flex items-center gap-2 text-xs font-extrabold text-indigo-700 dark:text-indigo-400">
                   <DollarSign size={15} />
                   <span>Ticket Pricing Tiers</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleAddTier}
-                  className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={13} /> Add Tier
                 </button>
@@ -333,20 +352,23 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
                       placeholder="Tier Name (e.g. VIP)"
                       value={tier.name}
                       onChange={(e) => handleTierChange(idx, 'name', e.target.value)}
-                      className="flex-1 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-white text-xs"
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold"
                     />
-                    <input
-                      type="number"
-                      placeholder="Price (₦)"
-                      value={tier.price}
-                      onChange={(e) => handleTierChange(idx, 'price', Number(e.target.value))}
-                      className="w-28 px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-white text-xs font-mono"
-                    />
+                    <div className="relative w-28">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₦</span>
+                      <input
+                        type="number"
+                        placeholder="Price"
+                        value={tier.price}
+                        onChange={(e) => handleTierChange(idx, 'price', Number(e.target.value))}
+                        className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono font-bold"
+                      />
+                    </div>
                     {formData.ticketTiers.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleRemoveTier(idx)}
-                        className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                        className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -361,10 +383,10 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }) => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-xl shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full py-3 rounded-2xl font-bold text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
             >
               <Sparkles size={16} />
-              {eventType === 'PUBLIC' ? 'Publish Public Event' : 'Create Private Guest Event'}
+              <span>{eventType === 'PUBLIC' ? 'Publish Public Event' : 'Create Private Guest Event'}</span>
             </button>
           </div>
         </form>

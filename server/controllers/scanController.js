@@ -4,6 +4,7 @@ const Event = require('../models/Event');
 const CheckInLog = require('../models/CheckInLog');
 const cryptoService = require('../services/cryptoService');
 const lockService = require('../services/lockService');
+const websocketService = require('../services/websocketService');
 const asyncHandler = require('../middleware/asyncHandler');
 const ErrorResponse = require('../utils/errorResponse');
 
@@ -164,8 +165,8 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
     }
   }
 
-  let event = ticket.event;
-  const eventIdToFind = event?._id || ticket.eventId || eid;
+  let event = typeof ticket.event === 'object' && ticket.event !== null ? ticket.event : null;
+  const eventIdToFind = event?._id || ticket.eventId || (typeof ticket.event === 'string' ? ticket.event : null) || eid;
 
   if (!event && eventIdToFind) {
     try {
@@ -213,6 +214,9 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
   try {
     // 6. Atomic State Transition: Ticket.findOneAndUpdate({ _id: tid, status: 'VALID' })
     let updatedTicket = null;
+    const initialAdmitPlusOnes = typeof req.body.admitPlusOnes === 'number' 
+      ? Math.min(req.body.admitPlusOnes, ticket.plusOnes || 0)
+      : (ticket.plusOnes || 0);
 
     try {
       updatedTicket = await Ticket.findOneAndUpdate(
@@ -223,6 +227,7 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
             checkInTime: new Date(),
             gateScanned: gateName,
             scannedByDevice: scannerId,
+            plusOnesCheckedIn: initialAdmitPlusOnes,
           },
           $inc: { scanCount: 1 },
         },
@@ -235,6 +240,7 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
         ticket.checkInTime = new Date();
         ticket.gateScanned = gateName;
         ticket.scannedByDevice = scannerId;
+        ticket.plusOnesCheckedIn = initialAdmitPlusOnes;
         ticket.scanCount = (ticket.scanCount || 0) + 1;
         updatedTicket = ticket;
       } else {
@@ -254,6 +260,50 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
       }
 
       if (currentTicket.status === 'CHECKED_IN') {
+        const allowedPlus = currentTicket.plusOnes || 0;
+        const alreadyIn = currentTicket.plusOnesCheckedIn || 0;
+        const remainingPlusOnes = Math.max(0, allowedPlus - alreadyIn);
+
+        // If guest has remaining plus-one credits and usher is admitting remaining
+        if (remainingPlusOnes > 0 && req.body.admitRemaining) {
+          const admitCount = Math.min(Number(req.body.admitPlusOnes) || 1, remainingPlusOnes);
+          const newCheckedInCount = alreadyIn + admitCount;
+
+          try {
+            currentTicket = await Ticket.findByIdAndUpdate(
+              currentTicket._id,
+              { $set: { plusOnesCheckedIn: newCheckedInCount } },
+              { new: true }
+            );
+            await Guest.findOneAndUpdate(
+              { $or: [{ ticket: currentTicket._id }, { qrToken: currentTicket.qrToken }] },
+              { $set: { plusOnesCheckedIn: newCheckedInCount } }
+            );
+          } catch (e) {
+            currentTicket.plusOnesCheckedIn = newCheckedInCount;
+          }
+
+          return res.status(200).json({
+            success: true,
+            status: 'SUCCESS',
+            partialPlusOne: true,
+            message: `Admitted ${admitCount} plus-one(s). ${Math.max(0, allowedPlus - newCheckedInCount)} credit(s) remaining.`,
+            guest: {
+              id: currentTicket.guestId || currentTicket._id,
+              name: currentTicket.guestName,
+              tier: currentTicket.tier,
+              table: currentTicket.table,
+              seatNumber: currentTicket.seatNumber,
+              plusOnes: allowedPlus,
+              plusOnesCheckedIn: newCheckedInCount,
+              remainingPlusOnes: Math.max(0, allowedPlus - newCheckedInCount),
+              status: 'CHECKED_IN',
+              checkInTime: currentTicket.checkInTime,
+              gate: gateName,
+            },
+          });
+        }
+
         const priorTime = currentTicket.checkInTime || new Date();
         const formattedTime = new Date(priorTime).toLocaleTimeString();
 
@@ -273,6 +323,19 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
           memoryCheckInLogs.unshift(duplicateLog);
         }
 
+        try {
+          websocketService.broadcastScanEvent(event?._id || 'general', {
+            outcome: 'DUPLICATE',
+            guestName: currentTicket.guestName,
+            guestId: currentTicket.guestId || currentTicket._id,
+            tier: currentTicket.tier,
+            gate: gateName,
+            scannerId,
+            timestamp: new Date().toISOString(),
+            message: `Duplicate scan attempt at ${gateName}`,
+          });
+        } catch (e) {}
+
         return res.status(409).json({
           success: false,
           status: 'DUPLICATE',
@@ -283,9 +346,17 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
           scanCount: currentTicket.scanCount,
           guestName: currentTicket.guestName,
           tier: currentTicket.tier,
+          plusOnes: allowedPlus,
+          plusOnesCheckedIn: alreadyIn,
+          remainingPlusOnes,
           guest: {
             name: currentTicket.guestName,
             tier: currentTicket.tier,
+            table: currentTicket.table,
+            seatNumber: currentTicket.seatNumber,
+            plusOnes: allowedPlus,
+            plusOnesCheckedIn: alreadyIn,
+            remainingPlusOnes,
             status: 'CHECKED_IN',
             checkInTime: currentTicket.checkInTime,
             gate: currentTicket.gateScanned,
@@ -325,11 +396,19 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
 
     // 8. Successful Check-in
     // Update Event checkedIn count
-    if (event?._id) {
+    const targetEventId = event?._id || eventIdToFind;
+    if (targetEventId) {
       try {
-        await Event.findByIdAndUpdate(event._id, { $inc: { checkedIn: 1 } });
-      } catch (e) {
-        if (event) event.checkedIn = (event.checkedIn || 0) + 1;
+        await Event.findByIdAndUpdate(targetEventId, { $inc: { checkedIn: 1 } });
+      } catch (e) {}
+      const eventController = require('./eventController');
+      const memEvents = eventController._getMemoryEvents ? eventController._getMemoryEvents() : [];
+      const memEv = memEvents.find((e) => String(e._id) === String(targetEventId) || String(e.id) === String(targetEventId));
+      if (memEv) {
+        memEv.checkedIn = (memEv.checkedIn || 0) + 1;
+      }
+      if (event && typeof event === 'object') {
+        event.checkedIn = (event.checkedIn || 0) + 1;
       }
     }
 
@@ -372,6 +451,20 @@ exports.verifyAndCheckIn = asyncHandler(async (req, res, next) => {
     } catch (e) {
       memoryCheckInLogs.unshift(successLog);
     }
+
+    // Broadcast instant scan telemetry via native WebSocket
+    try {
+      websocketService.broadcastScanEvent(targetEventId || 'general', {
+        outcome: 'SUCCESS',
+        guestName: updatedTicket.guestName,
+        guestId: updatedTicket.guestId || updatedTicket._id,
+        tier: updatedTicket.tier,
+        table: updatedTicket.table,
+        gate: gateName,
+        scannerId,
+        timestamp: updatedTicket.checkInTime || new Date().toISOString(),
+      });
+    } catch (e) {}
 
     return res.status(200).json({
       success: true,
@@ -453,6 +546,79 @@ exports.syncOfflineScans = asyncHandler(async (req, res, next) => {
     processed,
     conflicts,
     message: `Batch sync complete: ${processed} scans reconciled, ${conflicts} duplicate/unknown entries.`,
+  });
+});
+
+/**
+ * @desc    Usher Gate Login via 4-6 digit PIN or Event Access Code
+ * @route   POST /api/scan/usher-login
+ * @access  Public
+ */
+exports.usherLogin = asyncHandler(async (req, res, next) => {
+  const { pin, eventId } = req.body;
+  if (!pin) {
+    return res.status(400).json({ success: false, message: 'Please provide the usher access PIN' });
+  }
+
+  let event = null;
+  const pinStr = String(pin).trim();
+
+  if (eventId) {
+    try {
+      event = await Event.findById(eventId);
+    } catch (e) {}
+  }
+
+  if (!event) {
+    // Search by scannerPin
+    try {
+      event = await Event.findOne({ scannerPin: pinStr });
+    } catch (e) {}
+  }
+
+  if (!event) {
+    const eventController = require('./eventController');
+    const memEvents = eventController._getMemoryEvents ? eventController._getMemoryEvents() : [];
+    event = memEvents.find(e => String(e.scannerPin) === pinStr || (eventId && (String(e._id) === String(eventId) || String(e.id) === String(eventId))));
+  }
+
+  // Fallback demo match for default PIN 1234
+  if (!event && pinStr === '1234') {
+    const eventController = require('./eventController');
+    const memEvents = eventController._getMemoryEvents ? eventController._getMemoryEvents() : [];
+    event = memEvents[0];
+  }
+
+  if (!event) {
+    return res.status(401).json({ success: false, message: 'Invalid Usher PIN or unauthorized gate code' });
+  }
+
+  // Pre-fetch roster for offline local cache
+  let guestRoster = [];
+  try {
+    guestRoster = await Guest.find({ event: event._id }).select('name email phone tier table seatNumber plusOnes plusOnesCheckedIn qrToken status checkInTime');
+  } catch (e) {
+    const guestController = require('./guestController');
+    const memGuests = guestController._getMemoryGuests ? guestController._getMemoryGuests() : [];
+    guestRoster = memGuests.filter(g => String(g.eventId || g.event) === String(event._id || event.id));
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: 'Gate Usher Authenticated',
+    event: {
+      id: event._id || event.id,
+      name: event.name,
+      venue: event.venue,
+      date: event.date,
+      time: event.time,
+      capacity: event.capacity,
+      checkedIn: event.checkedIn || 0,
+      publicKey: event.publicKey,
+      type: event.type,
+      cardTheme: event.cardTheme,
+    },
+    offlineRoster: guestRoster,
   });
 });
 

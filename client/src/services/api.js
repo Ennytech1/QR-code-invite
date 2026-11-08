@@ -151,7 +151,13 @@ export const dispatchTicketsApi = async (dispatchData) => {
 };
 
 // Scan Verification API (Anti-Replay & Ed25519 check)
-export const verifyScanApi = async (payload, gateName = 'Gate North #1', scannerDeviceId = 'scanner_pwa_1') => {
+export const verifyScanApi = async (
+  payload,
+  gateName = 'Gate North #1',
+  scannerDeviceId = 'scanner_pwa_1',
+  admitPlusOnes = undefined,
+  admitRemaining = false
+) => {
   try {
     const res = await api.post('/scan/verify', {
       qrPayload: payload,
@@ -161,6 +167,8 @@ export const verifyScanApi = async (payload, gateName = 'Gate North #1', scanner
       gate: gateName,
       scannerDeviceId,
       scannerId: scannerDeviceId,
+      admitPlusOnes,
+      admitRemaining,
     });
     return res.data;
   } catch (err) {
@@ -168,6 +176,19 @@ export const verifyScanApi = async (payload, gateName = 'Gate North #1', scanner
       return err.response.data;
     }
     return null;
+  }
+};
+
+// Usher Gate Login API
+export const usherLoginApi = async (pin, eventId = null) => {
+  try {
+    const res = await api.post('/scan/usher-login', { pin, eventId });
+    return res.data;
+  } catch (err) {
+    if (err.response && err.response.data) {
+      return err.response.data;
+    }
+    return { success: false, message: 'Gate authentication failed' };
   }
 };
 
@@ -188,6 +209,16 @@ export const syncScansApi = async (scans) => {
 export const fetchPublicPass = async (tokenOrId) => {
   try {
     const res = await api.get(`/tickets/${tokenOrId}/pass`);
+    return res.data;
+  } catch (err) {
+    return null;
+  }
+};
+
+// Checkout & Payment Initialization API
+export const initializeCheckoutApi = async (checkoutData) => {
+  try {
+    const res = await api.post('/tickets/initialize-checkout', checkoutData);
     return res.data;
   } catch (err) {
     return null;

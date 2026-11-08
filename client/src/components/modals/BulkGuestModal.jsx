@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { X, UploadCloud, Users, Check, FileSpreadsheet, Plus, Trash2, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, UploadCloud, Users, Check, FileSpreadsheet, Plus, Trash2, MapPin, ExternalLink, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useEvents } from '../../context/EventContext';
 
 const BulkGuestModal = ({ isOpen, onClose, defaultEventId }) => {
+  const navigate = useNavigate();
   const { events, activeEventId, addGuest, bulkAddGuests } = useEvents();
 
   const [selectedEventId, setSelectedEventId] = useState(defaultEventId || activeEventId || events[0]?.id);
   const [activeTab, setActiveTab] = useState('single'); // 'single' | 'csv'
   const [singleName, setSingleName] = useState('');
   const [singleEmail, setSingleEmail] = useState('');
-  const [singlePhone, setSinglePhone] = useState('');
+  const [singlePhone, setSinglePhone] = useState('+234 ');
   const [singleTier, setSingleTier] = useState('VIP');
   const [singleTable, setSingleTable] = useState('');
+  const [plusOnes, setPlusOnes] = useState(0);
+
+  const [csvText, setCsvText] = useState('');
+  const [sampleLoaded, setSampleLoaded] = useState(false);
 
   useEffect(() => {
     if (defaultEventId) {
@@ -23,27 +29,28 @@ const BulkGuestModal = ({ isOpen, onClose, defaultEventId }) => {
       setSelectedEventId(events[0].id);
     }
   }, [defaultEventId, activeEventId, isOpen, events]);
-  const [plusOnes, setPlusOnes] = useState(0);
-
-  const [csvText, setCsvText] = useState('');
-  const [sampleLoaded, setSampleLoaded] = useState(false);
 
   if (!isOpen) return null;
 
   const currentEvent = events.find((e) => e.id === selectedEventId) || events[0];
 
+  const handleOpenStudioPage = () => {
+    onClose();
+    navigate(`/guests/add?eventId=${selectedEventId || currentEvent?.id}`);
+  };
+
   const handleSingleSubmit = (e) => {
     e.preventDefault();
-    if (!singleName) {
+    if (!singleName.trim()) {
       toast.error('Guest name is required');
       return;
     }
 
     try {
       addGuest(currentEvent.id, {
-        name: singleName,
-        email: singleEmail,
-        phone: singlePhone,
+        name: singleName.trim(),
+        email: singleEmail.trim(),
+        phone: singlePhone.trim(),
         tier: singleTier,
         table: singleTable || (currentEvent.type === 'PRIVATE' ? 'Table Reserved' : 'General Admission'),
         plusOnes,
@@ -107,26 +114,42 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#121622] border border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-100 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-white dark:bg-[#0c0e14] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100 my-auto">
         
+        {/* Full Studio Page Link Banner */}
+        <div className="px-6 py-2.5 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 border-b border-indigo-100 dark:border-indigo-950/60 flex items-center justify-between text-xs">
+          <span className="font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+            <Sparkles size={13} className="text-indigo-500" />
+            <span>Need full-screen preview & live pass dock?</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleOpenStudioPage}
+            className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Open Studio Page</span>
+            <ExternalLink size={11} />
+          </button>
+        </div>
+
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/60">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#3B2875] to-[#7C5CFC] text-white flex items-center justify-center shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
               <Users size={18} />
             </div>
             <div>
-              <h3 className="font-extrabold text-base sm:text-lg tracking-tight text-white">
+              <h3 className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white font-heading">
                 Add Guests & Generate Passes
               </h3>
-              <p className="text-xs text-slate-400">Individual entry or bulk CSV/Excel import</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Individual entry or bulk CSV/Excel import</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -134,13 +157,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
 
         {/* Event Selector Pill */}
         <div className="px-6 pt-4">
-          <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
             Target Event
           </label>
           <select
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-semibold focus:outline-none focus:border-indigo-500"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer shadow-2xs"
           >
             {events.map((evt) => (
               <option key={evt.id} value={evt.id}>
@@ -151,13 +174,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
         </div>
 
         {/* Tab Switcher */}
-        <div className="px-6 pt-4 flex gap-4 border-b border-slate-800">
+        <div className="px-6 pt-4 flex gap-4 border-b border-slate-200 dark:border-slate-800">
           <button
             onClick={() => setActiveTab('single')}
             className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
               activeTab === 'single'
-                ? 'text-indigo-400 border-b-2 border-indigo-500'
-                : 'text-slate-400 hover:text-white'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
             }`}
           >
             Single Guest
@@ -166,8 +189,8 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
             onClick={() => setActiveTab('csv')}
             className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
               activeTab === 'csv'
-                ? 'text-indigo-400 border-b-2 border-indigo-500'
-                : 'text-slate-400 hover:text-white'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
             }`}
           >
             Bulk CSV Ingestion (100+ Guests)
@@ -178,8 +201,8 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
         {activeTab === 'single' ? (
           <form onSubmit={handleSingleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                Guest Full Name
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                Guest Full Name <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -187,13 +210,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
                 placeholder="e.g. Chief Kelechi Okafor & Wife"
                 value={singleName}
                 onChange={(e) => setSingleName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500 font-semibold"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                   WhatsApp Phone
                 </label>
                 <input
@@ -201,18 +224,18 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
                   placeholder="+234 803 000 0000"
                   value={singlePhone}
                   onChange={(e) => setSinglePhone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                   Access Tier
                 </label>
                 <select
                   value={singleTier}
                   onChange={(e) => setSingleTier(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-indigo-500 cursor-pointer"
                 >
                   <option value="VIP">VIP</option>
                   <option value="VVIP">VVIP / High Table</option>
@@ -225,20 +248,20 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                   Table / Seat Assignment
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Table 4 • VIP"
+                  placeholder="e.g. Table 4 • VIP Deck"
                   value={singleTable}
                   onChange={(e) => setSingleTable(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                   Plus Ones Allowed
                 </label>
                 <input
@@ -247,13 +270,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
                   max="10"
                   value={plusOnes}
                   onChange={(e) => setPlusOnes(Number(e.target.value))}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-semibold"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
                 Email Address (Optional)
               </label>
               <input
@@ -261,7 +284,7 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
                 placeholder="name@company.com"
                 value={singleEmail}
                 onChange={(e) => setSingleEmail(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
 
@@ -269,13 +292,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 cursor-pointer active:scale-95 transition-all"
               >
                 Add Guest & Sign Pass
               </button>
@@ -285,13 +308,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
           <form onSubmit={handleCsvSubmit} className="p-6 space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   Paste CSV Records (Format: Name, Email, Phone, Tier, Table, PlusOnes)
                 </label>
                 <button
                   type="button"
                   onClick={handleLoadSampleBatch}
-                  className="text-xs font-bold text-indigo-400 hover:text-indigo-300 cursor-pointer"
+                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                 >
                   Load 5 Sample Guests
                 </button>
@@ -302,12 +325,12 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
                 placeholder="Chief Kelechi Okafor, k.okafor@venture.ng, +2348031112233, VVIP, Table 1, 1&#10;Dr. Amina Yusuf, amina@acme.ng, +2348023334455, VIP, Table 4, 2"
-                className="w-full p-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             {sampleLoaded && (
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 font-semibold flex items-center justify-between">
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-semibold flex items-center justify-between">
                 <span>5 records formatted & ready for cryptographic token signing</span>
                 <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-bold">READY</span>
               </div>
@@ -317,13 +340,13 @@ Hajiya Zainab Bello, z.bello@invest.ng, +2348099887766, VVIP, Table 2 High Table
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl border border-slate-700 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/25 cursor-pointer active:scale-95 transition-all"
               >
                 Import All & Sign Passes
               </button>

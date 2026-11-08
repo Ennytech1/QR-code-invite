@@ -5,7 +5,7 @@ import {
   Zap, Radio, ChevronDown, Check, Sparkles, ExternalLink,
   ChevronRight, RefreshCw, AlertTriangle, ChevronsUpDown,
   Bell, Plus, Command, FileSpreadsheet, Activity, Flame,
-  Share2, Shield, Eye
+  Share2, Shield, Eye, ArrowLeft
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -341,6 +341,18 @@ const EventManageOverview = ({
               </span>
             </div>
 
+            {/* Back to Events Catalog Button */}
+            {onBackToCatalog && (
+              <button
+                onClick={onBackToCatalog}
+                className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs group"
+                title="Return to Events Catalog to choose or switch events"
+              >
+                <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform text-blue-600 dark:text-blue-400" />
+                <span>All Events</span>
+              </button>
+            )}
+
             {/* Dropdown Event Selector */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -437,7 +449,7 @@ const EventManageOverview = ({
                     <button
                       onClick={() => {
                         setEventDropdownOpen(false);
-                        setNewEventModalOpen(true);
+                        navigate('/events/create');
                       }}
                       className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold flex items-center gap-1 cursor-pointer"
                     >
@@ -471,7 +483,7 @@ const EventManageOverview = ({
             <button
               onClick={() => {
                 if (onOpenNewEvent) onOpenNewEvent();
-                else setNewEventModalOpen(true);
+                else navigate('/events/create');
               }}
               className="h-9 px-3.5 sm:px-4 rounded-xl bg-[#1d4ed8] hover:bg-[#1e40af] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm shadow-blue-700/20 active:scale-98 transition-all cursor-pointer"
             >

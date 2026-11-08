@@ -39,9 +39,22 @@ const guestSchema = new mongoose.Schema(
       type: String,
       default: 'General Seating',
     },
+    seatNumber: {
+      type: String,
+      default: '',
+    },
     plusOnes: {
       type: Number,
       default: 0,
+    },
+    plusOnesCheckedIn: {
+      type: Number,
+      default: 0,
+    },
+    rsvpStatus: {
+      type: String,
+      enum: ['PENDING', 'ATTENDING', 'DECLINED'],
+      default: 'PENDING',
     },
     qrToken: {
       type: String,

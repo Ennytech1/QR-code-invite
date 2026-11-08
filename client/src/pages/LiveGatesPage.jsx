@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Activity,
   Zap,
@@ -23,7 +24,13 @@ import {
   Sparkles,
   ChevronDown,
   Layers,
-  BarChart3
+  BarChart3,
+  ArrowLeft,
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Lock,
+  Globe
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useEvents } from '../context/EventContext';
@@ -113,17 +120,61 @@ const INITIAL_HOURLY_RUSH = [
 ];
 
 const LiveGatesPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventParam = searchParams.get('eventId') || searchParams.get('event');
+
   const { events, guests, checkInLogs, activeEventId, setActiveEventId } = useEvents();
+
+  // Mode: 'catalog' (choose which event gate to monitor) | 'telemetry' (live ingress feed)
+  const [viewMode, setViewMode] = useState(eventParam ? 'telemetry' : 'catalog');
+  const [selectedEventId, setSelectedEventId] = useState(eventParam || activeEventId || events[0]?.id);
+
+  // Filters for the Catalog view
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogFilter, setCatalogFilter] = useState('ALL'); // 'ALL' | 'PUBLIC' | 'PRIVATE'
+
+  // Sync eventParam if provided
+  useEffect(() => {
+    if (eventParam && events.some((e) => e.id === eventParam)) {
+      setSelectedEventId(eventParam);
+      setActiveEventId(eventParam);
+      setViewMode('telemetry');
+    }
+  }, [eventParam, events]);
 
   // Active event selection
   const selectedEvent = useMemo(() => {
-    return events.find((e) => e.id === activeEventId) || events[0] || {
+    return events.find((e) => e.id === selectedEventId) || events[0] || {
       id: 'evt_general',
       name: 'All Events Ingress',
       capacity: 2500,
       checkedIn: 120,
     };
-  }, [events, activeEventId]);
+  }, [events, selectedEventId]);
+
+  const handleSelectEvent = (evt) => {
+    setSelectedEventId(evt.id);
+    setActiveEventId(evt.id);
+    setViewMode('telemetry');
+    setSearchParams({ eventId: evt.id });
+    toast.success(`Connected to Live Gates Telemetry for "${evt.name}"`);
+  };
+
+  const handleBackToCatalog = () => {
+    setViewMode('catalog');
+    setSearchParams({});
+  };
+
+  const filteredCatalogEvents = useMemo(() => {
+    return events.filter((evt) => {
+      const matchesSearch =
+        evt.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+        evt.venue.toLowerCase().includes(catalogSearch.toLowerCase());
+      const matchesFilter =
+        catalogFilter === 'ALL' || evt.type === catalogFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [events, catalogSearch, catalogFilter]);
 
   // Live telemetry streaming toggle
   const [isLiveStreaming, setIsLiveStreaming] = useState(true);
@@ -424,49 +475,233 @@ const LiveGatesPage = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12 animate-fade-in text-slate-900 dark:text-white">
+    <div className="space-y-6 pb-12 animate-fade-in text-slate-900 dark:text-white max-w-7xl mx-auto">
       
-      {/* ─── Top Telemetry Header ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-500 dark:text-indigo-400 flex items-center justify-center">
-              <Activity size={18} className="animate-pulse" />
-            </div>
+      {/* ─────────────────────────────────────────────────────────────
+          VIEW 1: EVENT TELEMETRY CATALOG (SELECT EVENT FIRST)
+         ───────────────────────────────────────────────────────────── */}
+      {viewMode === 'catalog' && (
+        <div className="space-y-6 animate-fade-in-scale">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight">Gate Telemetry & Real-Time Ingress</h1>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Live Feed
-                </span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 mb-2">
+                <Activity size={13} className="text-indigo-500 animate-pulse" />
+                <span>REAL-TIME TELEMETRY • SELECT EVENT FIRST</span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Real-time optical scanner ingress velocity, cryptographic verification telemetry, and anti-replay defense.
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white font-heading">
+                Gate Telemetry & Ingress Mesh
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+                Choose an active event to open live turnstile lane velocities, sub-15ms optical scan streams, and cryptographic replay defense audit logs.
               </p>
             </div>
+
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                Turnstile Mesh Online
+              </span>
+            </div>
+          </div>
+
+          {/* Search & Filter Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 shadow-xs">
+            <div className="relative flex-1">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={catalogSearch}
+                onChange={(e) => setCatalogSearch(e.target.value)}
+                placeholder="Search events by name or venue..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900 text-xs font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 self-start sm:self-auto">
+              {['ALL', 'PUBLIC', 'PRIVATE'].map((filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setCatalogFilter(filter)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    catalogFilter === filter
+                      ? 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-2xs scale-102'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {filter === 'ALL' ? 'All Events' : filter === 'PUBLIC' ? 'Public' : 'Private'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Event Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredCatalogEvents.map((evt) => {
+              const evtGuests = (guests && guests[evt.id]) || [];
+              const checkedIn = evtGuests.filter((g) => g.status === 'CHECKED_IN').length;
+              const pct = evtGuests.length > 0 ? Math.round((checkedIn / evtGuests.length) * 100) : 0;
+
+              return (
+                <div
+                  key={evt.id}
+                  onClick={() => handleSelectEvent(evt)}
+                  className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111113] overflow-hidden shadow-xs hover:shadow-xl hover:border-indigo-500 dark:hover:border-indigo-500 transition-all duration-300 cursor-pointer flex flex-col justify-between group hover:-translate-y-1"
+                >
+                  <div>
+                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-900">
+                      <img
+                        src={evt.banner || '/images/hero/hero_concert.jpg'}
+                        alt={evt.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                        <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${
+                          evt.type === 'PRIVATE'
+                            ? 'bg-amber-500/90 text-black border-amber-400'
+                            : 'bg-indigo-600/90 text-white border-indigo-400'
+                        }`}>
+                          {evt.type === 'PRIVATE' ? '🔒 PRIVATE VIP' : '🌍 PUBLIC TICKETED'}
+                        </span>
+
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/60 backdrop-blur-md text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Live Stream
+                        </span>
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-base font-extrabold text-white truncate drop-shadow-md">
+                          {evt.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-300 truncate flex items-center gap-1 mt-0.5">
+                          <MapPin size={11} className="text-rose-400 shrink-0" />
+                          <span>{evt.venue}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 sm:p-5 space-y-3.5">
+                      <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Calendar size={13} className="text-indigo-500" />
+                          <span>{evt.date}</span>
+                        </span>
+                        <span className="font-mono text-slate-500">4 Active Lanes</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-700 dark:text-slate-300">Turnstile Ingress</span>
+                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            {checkedIn} / {evtGuests.length} ({pct}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-zinc-800 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 pt-0">
+                    <button
+                      type="button"
+                      className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-900 group-hover:bg-indigo-600 text-slate-700 dark:text-slate-200 group-hover:text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-2xs group-hover:shadow-md group-hover:shadow-indigo-600/30"
+                    >
+                      <Activity size={14} />
+                      <span>Open Live Telemetry</span>
+                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        {/* Header Controls: Event Selector & Stream Controls */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <select
-            value={activeEventId}
-            onChange={(e) => setActiveEventId(e.target.value)}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-          >
-            {events.map((evt) => (
-              <option key={evt.id} value={evt.id}>
-                {evt.name}
-              </option>
-            ))}
-          </select>
+      {/* ─────────────────────────────────────────────────────────────
+          VIEW 2: REAL-TIME TELEMETRY STREAM & AUDIT DASHBOARD
+         ───────────────────────────────────────────────────────────── */}
+      {viewMode === 'telemetry' && (
+        <div className="space-y-6 animate-fade-in-scale">
+          {/* Top Telemetry Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/10 shadow-xs">
+            <div>
+              <button
+                type="button"
+                onClick={handleBackToCatalog}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mb-2 group transition-colors cursor-pointer"
+              >
+                <ArrowLeft size={13} className="group-hover:-translate-x-1 transition-transform" />
+                <span>Switch Event Telemetry</span>
+              </button>
 
-          <button
-            onClick={() => setIsLiveStreaming(!isLiveStreaming)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isLiveStreaming
-                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-500/20'
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-500 dark:text-indigo-400 flex items-center justify-center">
+                  <Activity size={18} className="animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-xl font-extrabold tracking-tight">Gate Telemetry & Real-Time Ingress</h1>
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      Live Feed
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Monitoring: <strong className="text-slate-900 dark:text-white">{selectedEvent?.name}</strong> • {selectedEvent?.venue}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Header Controls: Stream Controls */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleBackToCatalog}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              >
+                Switch Event
+              </button>
+
+              <button
+                onClick={() => setIsLiveStreaming(!isLiveStreaming)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isLiveStreaming
+                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs shadow-indigo-500/20'
+                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                {isLiveStreaming ? <Pause size={13} /> : <Play size={13} />}
+                <span>{isLiveStreaming ? 'Stream Active' : 'Stream Paused'}</span>
+              </button>
+
+              <button
+                onClick={handleSimulateScan}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Zap size={13} className="text-amber-400" />
+                <span>Simulate Scan</span>
+              </button>
+
+              <button
+                onClick={handleExportCSV}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download size={13} />
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
                 : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
             }`}
           >
@@ -980,6 +1215,7 @@ const LiveGatesPage = () => {
         </div>
 
       </div>
+      )}
 
     </div>
   );

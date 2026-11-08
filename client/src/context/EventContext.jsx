@@ -7,6 +7,7 @@ import {
   createGuestApi,
   bulkAddGuestsApi,
   verifyScanApi,
+  initializeCheckoutApi,
 } from '../services/api';
 
 const EventContext = createContext();
@@ -692,6 +693,18 @@ export const EventProvider = ({ children }) => {
       )
     );
 
+    // Fire backend checkout/issuance synchronization
+    initializeCheckoutApi({
+      eventId,
+      tierId: tier.id,
+      tierName: tier.name,
+      price: tier.price,
+      quantity,
+      buyerName,
+      buyerEmail,
+      buyerPhone,
+    }).catch(() => {});
+
     return { success: true, guests: issuedGuests, totalAmount, event: targetEvent };
   };
 
@@ -724,24 +737,71 @@ export const EventProvider = ({ children }) => {
         guest,
       };
     } else if (guest.status === 'CHECKED_IN') {
-      result = {
-        success: false,
-        status: 'DUPLICATE',
-        message: `Already checked in at ${new Date(guest.checkInTime).toLocaleTimeString()} at ${guest.gate || 'another gate'}! Possible screenshot or duplicate attempt.`,
-        guest,
-        firstUsed: `${new Date(guest.checkInTime).toLocaleTimeString()} at ${guest.gate || 'Gate 1'}`,
-        checkInTime: guest.checkInTime,
-        gateScanned: guest.gate || gateName,
-        scanCount: (guest.scanCount || 1) + 1,
-      };
+      const allowedPlus = guest.plusOnes || 0;
+      const alreadyIn = guest.plusOnesCheckedIn || 0;
+      const remainingCredits = Math.max(0, allowedPlus - alreadyIn);
+
+      if (remainingCredits > 0 && admitRemaining) {
+        const admitCount = Math.min(Number(admitPlusOnes) || 1, remainingCredits);
+        const newCheckedInCount = alreadyIn + admitCount;
+        const checkInTime = new Date().toISOString();
+
+        setGuests((prev) =>
+          prev.map((g) =>
+            g.id === guest.id
+              ? { ...g, plusOnesCheckedIn: newCheckedInCount }
+              : g
+          )
+        );
+
+        // Append to live checkin log
+        const logEntry = {
+          id: 'log_' + Date.now(),
+          guestId: guest.id,
+          guestName: `${guest.name} (+${admitCount} Plus-One)`,
+          tier: guest.tier,
+          eventId: guest.eventId,
+          gate: gateName,
+          timestamp: checkInTime,
+        };
+        setCheckInLogs((prev) => [logEntry, ...prev]);
+
+        result = {
+          success: true,
+          status: 'SUCCESS',
+          partialPlusOne: true,
+          message: `Admitted ${admitCount} plus-one(s). ${allowedPlus - newCheckedInCount} credit(s) remaining.`,
+          guest: {
+            ...guest,
+            plusOnesCheckedIn: newCheckedInCount,
+            remainingPlusOnes: Math.max(0, allowedPlus - newCheckedInCount),
+            gate: gateName,
+          },
+        };
+      } else {
+        result = {
+          success: false,
+          status: 'DUPLICATE',
+          message: `Already checked in at ${new Date(guest.checkInTime).toLocaleTimeString()} at ${guest.gate || 'another gate'}! Possible screenshot or duplicate attempt.`,
+          guest,
+          firstUsed: `${new Date(guest.checkInTime).toLocaleTimeString()} at ${guest.gate || 'Gate 1'}`,
+          checkInTime: guest.checkInTime,
+          gateScanned: guest.gate || gateName,
+          scanCount: (guest.scanCount || 1) + 1,
+          remainingPlusOnes: remainingCredits,
+        };
+      }
     } else {
       // Valid check-in!
       const checkInTime = new Date().toISOString();
+      const initialAdmitPlus = typeof admitPlusOnes === 'number' 
+        ? Math.min(admitPlusOnes, guest.plusOnes || 0) 
+        : (guest.plusOnes || 0);
 
       setGuests((prev) =>
         prev.map((g) =>
           g.id === guest.id
-            ? { ...g, status: 'CHECKED_IN', checkInTime, gate: gateName, scanCount: 1 }
+            ? { ...g, status: 'CHECKED_IN', checkInTime, gate: gateName, scanCount: 1, plusOnesCheckedIn: initialAdmitPlus }
             : g
         )
       );
@@ -767,16 +827,25 @@ export const EventProvider = ({ children }) => {
       };
       setCheckInLogs((prev) => [logEntry, ...prev]);
 
+      const remainingAfterCheckIn = Math.max(0, (guest.plusOnes || 0) - initialAdmitPlus);
+
       result = {
         success: true,
         status: 'SUCCESS',
         message: 'Access Granted! Welcome to the event.',
-        guest: { ...guest, status: 'CHECKED_IN', checkInTime, gate: gateName },
+        guest: { 
+          ...guest, 
+          status: 'CHECKED_IN', 
+          checkInTime, 
+          gate: gateName,
+          plusOnesCheckedIn: initialAdmitPlus,
+          remainingPlusOnes: remainingAfterCheckIn,
+        },
       };
     }
 
     // Fire non-blocking background synchronization to backend REST API
-    verifyScanApi(qrPayloadOrToken, gateName, scannerDeviceId).catch(() => {});
+    verifyScanApi(qrPayloadOrToken, gateName, scannerDeviceId, admitPlusOnes, admitRemaining).catch(() => {});
 
     // Dual promise-like object: supports synchronous .status immediately as well as async await
     const dualResult = Promise.resolve(result);

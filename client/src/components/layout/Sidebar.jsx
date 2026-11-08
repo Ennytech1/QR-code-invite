@@ -19,6 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 const NAV_ITEMS = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -32,8 +33,18 @@ const NAV_ITEMS = [
 
 const Sidebar = () => {
   const { isDark, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const displayName = user?.name || 'Chief Kelechi Okafor';
+  const displayRole = user?.organization || 'Verified Host • Level 3';
+  const initials = displayName
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 
   return (
     <aside className="w-[240px] shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-30 bg-white dark:bg-[#0c0e14] border-r border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200 select-none">
@@ -117,11 +128,11 @@ const Sidebar = () => {
       <div className="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40 space-y-2">
         <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-            KO
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">Chief Kelechi Okafor</div>
-            <div className="text-[10px] text-slate-400 truncate">Verified Host • Level 3</div>
+            <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{displayName}</div>
+            <div className="text-[10px] text-slate-400 truncate">{displayRole}</div>
           </div>
         </div>
 
@@ -135,11 +146,14 @@ const Sidebar = () => {
           </button>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
             className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
           >
             <LogOut size={13} />
-            <span>Exit</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </div>

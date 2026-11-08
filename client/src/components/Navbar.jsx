@@ -1,32 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Bell, Plus, QrCode, Menu, X, Search, Moon, Sun,
-  Command, Sparkles, CheckCircle2, ChevronDown
+  Bell, Menu, X, Search, Moon, Sun, Command
 } from 'lucide-react';
 import Notification, { INITIAL_NOTIFICATIONS } from './Notification';
 import { useTheme } from '../context/ThemeContext';
-import { Link, useLocation } from 'react-router-dom';
 
-const PAGE_TITLES = {
-  '/dashboard': 'Dashboard Overview',
-  '/events': 'Events Manager',
-  '/guests': 'Guest Roster & Pass Dispatch',
-  '/scanner': 'Gate Access Terminal',
-  '/wallet': 'Revenue & Settlements',
-  '/settings': 'Account & Gateway Settings',
-};
-
-const Navbar = ({ onOpenNewEvent, onOpenScanner }) => {
+const Navbar = () => {
   const { isDark, toggleTheme } = useTheme();
   const [notifOpen, setNotifOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const notifRef = useRef(null);
-  const location = useLocation();
 
   const unread = notifications.filter((n) => !n.read).length;
-  const title = PAGE_TITLES[location.pathname] || 'Organizer Workspace';
 
   useEffect(() => {
     const handler = (e) => {
@@ -39,67 +26,49 @@ const Navbar = ({ onOpenNewEvent, onOpenScanner }) => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3 bg-white/85 dark:bg-[#0c0e14]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
+    <header className="sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-2.5 bg-white/85 dark:bg-[#0c0e14]/90 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-200">
       <div className="flex items-center justify-between gap-4 max-w-7xl mx-auto">
 
-        {/* Left: Breadcrumb / Title & Gate Status */}
+        {/* Left: Mobile Toggle & Search Bar */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Toggle navigation menu"
           >
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
 
-          <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hidden sm:block">
-              Host Workspace
-            </div>
-            <h1 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              <span>{title}</span>
-              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Gate Mesh
-              </span>
-            </h1>
-          </div>
-        </div>
-
-        {/* Right: Actions & Tools */}
-        <div className="flex items-center gap-2.5">
-
           {/* Quick Search Bar */}
-          <div className="hidden lg:flex items-center gap-2 h-9 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 text-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+          <div className="flex items-center gap-2 h-9 px-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 text-xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
             <Search size={14} className="text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search guests, events, or token..."
-              className="bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-400 w-48 text-xs font-medium"
+              className="bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-400 w-44 sm:w-64 text-xs font-medium"
             />
-            <kbd className="flex items-center gap-0.5 text-[10px] text-slate-400 font-mono bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300/60 dark:border-slate-700">
+            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] text-slate-400 font-mono bg-slate-200/60 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-300/60 dark:border-slate-700">
               <Command size={10} />K
             </kbd>
           </div>
+        </div>
 
-          {/* Gate Scanner Launch */}
+        {/* Right: Theme Toggle & Notifications */}
+        <div className="flex items-center gap-2.5">
+          {/* Theme Toggle */}
           <button
-            onClick={onOpenScanner}
-            className="h-9 px-3.5 flex items-center gap-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-indigo-600 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-            title="Open Gate Scanner Terminal"
+            onClick={toggleTheme}
+            className="w-9 h-9 rounded-xl border border-slate-200/80 dark:border-white/[0.08] bg-slate-50/80 dark:bg-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all duration-200 cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+            title="Toggle theme"
+            aria-label="Toggle theme"
           >
-            <QrCode size={14} strokeWidth={2.3} className="text-indigo-500" />
-            <span className="hidden sm:inline">Gate Scanner</span>
-          </button>
-
-          {/* Create New Event Action */}
-          <button
-            onClick={onOpenNewEvent}
-            className="h-9 px-4 flex items-center gap-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-md shadow-indigo-600/25 transition-all active:scale-95 cursor-pointer"
-          >
-            <Plus size={14} strokeWidth={2.5} />
-            <span>Create Event</span>
+            {isDark ? (
+              <Sun size={15} className="text-amber-400 transition-transform duration-300 rotate-0 hover:rotate-45" />
+            ) : (
+              <Moon size={15} className="text-slate-700 transition-transform duration-300 rotate-0 hover:-rotate-12" />
+            )}
           </button>
 
           {/* Notifications Dropdown */}

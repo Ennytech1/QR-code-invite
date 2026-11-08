@@ -11,6 +11,7 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/error');
+const { initWebSocketServer } = require('./services/websocketService');
 
 // Initialize Express
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/guests', require('./routes/guestRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
+app.use('/api/whatsapp', require('./routes/whatsappRoutes'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Secure API Gateway' });
@@ -82,6 +84,7 @@ if (process.env.NODE_ENV !== 'test' && require.main === module) {
   server = app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
   });
+  initWebSocketServer(server);
 }
 
 // Handle unhandled promise rejections

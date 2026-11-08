@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { EventProvider } from './context/EventContext';
+import { AuthProvider } from './context/AuthContext';
 
 // Public Marketing & Event Discovery Pages
 import HomePage from './pages/HomePage';
@@ -12,6 +13,8 @@ import GateTechPage from './pages/GateTechPage';
 import PricingPage from './pages/PricingPage';
 import FaqsPage from './pages/FaqsPage';
 import PublicPassPage from './pages/PublicPassPage';
+import UsherPage from './pages/UsherPage';
+import AuthPage from './pages/AuthPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Organizer Portal Pages
@@ -24,6 +27,8 @@ import ScannerPage from './pages/ScannerPage';
 import LiveGatesPage from './pages/LiveGatesPage';
 import WalletPage from './pages/WalletPage';
 import SettingsPage from './pages/SettingsPage';
+import CreateEventPage from './pages/CreateEventPage';
+import AddGuestPage from './pages/AddGuestPage';
 
 // Modals
 import NewEventModal from './components/modals/NewEventModal';
@@ -36,16 +41,21 @@ const AppLayout = () => {
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
 
   // Check if current route is a public marketing/discovery page or public pass presentation
-  const publicRoutes = ['/', '/explore', '/how-it-works', '/gate-tech', '/pricing', '/faqs', '/pass/:id'];
+  const publicRoutes = ['/', '/explore', '/how-it-works', '/gate-tech', '/pricing', '/faqs', '/usher', '/login', '/register', '/auth', '/signup', '/pass/:id'];
   const isPublicRoute =
     publicRoutes.includes(location.pathname) ||
+    location.pathname === '/usher' ||
+    location.pathname === '/login' ||
+    location.pathname === '/register' ||
+    location.pathname === '/auth' ||
+    location.pathname === '/signup' ||
     location.pathname.startsWith('/pass/') ||
     location.pathname.startsWith('/ticket/');
 
   return (
     <>
       {isPublicRoute ? (
-        // Public Experience (Clean Landing, Explore, Guides & Docs, Public Pass)
+        // Public Experience (Clean Landing, Explore, Guides & Docs, Public Pass, Usher Terminal, Auth)
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/explore" element={<ExploreEventsPage />} />
@@ -53,6 +63,11 @@ const AppLayout = () => {
           <Route path="/gate-tech" element={<GateTechPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/faqs" element={<FaqsPage />} />
+          <Route path="/usher" element={<UsherPage />} />
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/register" element={<AuthPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/signup" element={<AuthPage />} />
           <Route path="/pass/:id" element={<PublicPassPage />} />
           <Route path="/pass/:token" element={<PublicPassPage />} />
           <Route path="/ticket/:id" element={<PublicPassPage />} />
@@ -64,16 +79,18 @@ const AppLayout = () => {
         <div className={`flex min-h-screen ${isDark ? 'dark' : ''} bg-[var(--bg-base)]`}>
           <Sidebar />
           <div className="flex-1 flex flex-col min-w-0">
-            <Navbar
-              onOpenNewEvent={() => setNewEventOpen(true)}
-              onOpenScanner={() => setScannerModalOpen(true)}
-            />
+            <Navbar />
             <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 md:py-8 max-w-7xl w-full mx-auto">
               <Routes>
                 <Route path="/dashboard" element={<Home onOpenNewEvent={() => setNewEventOpen(true)} onOpenScanner={() => setScannerModalOpen(true)} />} />
                 <Route path="/events" element={<EventsPage />} />
+                <Route path="/events/create" element={<CreateEventPage />} />
+                <Route path="/create-event" element={<CreateEventPage />} />
                 <Route path="/events/:eventId" element={<EventsPage />} />
                 <Route path="/guests" element={<GuestsPage />} />
+                <Route path="/guests/add" element={<AddGuestPage />} />
+                <Route path="/add-guest" element={<AddGuestPage />} />
+                <Route path="/add-guests" element={<AddGuestPage />} />
                 <Route path="/scanner" element={<ScannerPage />} />
                 <Route path="/live" element={<LiveGatesPage />} />
                 <Route path="/gates" element={<LiveGatesPage />} />
@@ -123,11 +140,13 @@ const AppLayout = () => {
 
 const App = () => (
   <ThemeProvider>
-    <EventProvider>
-      <BrowserRouter>
-        <AppLayout />
-      </BrowserRouter>
-    </EventProvider>
+    <AuthProvider>
+      <EventProvider>
+        <BrowserRouter>
+          <AppLayout />
+        </BrowserRouter>
+      </EventProvider>
+    </AuthProvider>
   </ThemeProvider>
 );
 

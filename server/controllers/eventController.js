@@ -197,8 +197,35 @@ exports.getEventStats = asyncHandler(async (req, res, next) => {
   }
 
   const capacity = event ? event.capacity || 500 : 500;
-  const issued = event ? event.issued || 0 : 0;
-  const checkedIn = event ? event.checkedIn || 0 : 0;
+  let issued = event ? event.issued || 0 : 0;
+  let checkedIn = event ? event.checkedIn || 0 : 0;
+
+  // Real-time dynamic aggregation fallback to guarantee accuracy in all operational modes
+  try {
+    const dbCheckedIn = await Ticket.countDocuments({
+      $or: [{ event: id }, { eventId: id }],
+      status: 'CHECKED_IN',
+    });
+    const dbIssued = await Ticket.countDocuments({
+      $or: [{ event: id }, { eventId: id }],
+    });
+    if (dbIssued > 0 || dbCheckedIn > 0) {
+      issued = Math.max(issued, dbIssued);
+      checkedIn = Math.max(checkedIn, dbCheckedIn);
+    }
+  } catch (err) {}
+
+  const guestController = require('./guestController');
+  const memTickets = guestController._getMemoryTickets ? guestController._getMemoryTickets() : [];
+  const eventTickets = memTickets.filter(
+    (t) => String(t.eventId || t.event?._id || t.event) === String(id)
+  );
+  if (eventTickets.length > 0) {
+    const memCheckedIn = eventTickets.filter((t) => t.status === 'CHECKED_IN').length;
+    issued = Math.max(issued, eventTickets.length);
+    checkedIn = Math.max(checkedIn, memCheckedIn);
+  }
+
   const attendanceRate = issued > 0 ? Math.round((checkedIn / issued) * 100) : 0;
   const capacityUtilization = Math.round((checkedIn / capacity) * 100);
 
